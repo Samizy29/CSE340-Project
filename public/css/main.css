@@ -168,3 +168,27 @@ footer p {
         transition: none;
     }
 }
+
+.category-tags {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.category-tags a {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: #e8f0fe;
+    color: #0b3d91;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.category-tags a:hover,
+.category-tags a:focus {
+    background: #0b3d91;
+    color: #fff;
+}
