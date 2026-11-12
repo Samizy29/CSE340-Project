@@ -1,43 +1,27 @@
 import db from './db.js';
 
-const getAllCategories = async () => {
+const getAllOrganizations = async () => {
     const query = `
-        SELECT category_id, name
-        FROM category
+        SELECT organization_id, name, description, contact_email, logo_filename
+        FROM organization
         ORDER BY name;
     `;
     const result = await db.query(query);
     return result.rows;
 };
 
-const getCategoryDetails = async (categoryId) => {
+const getOrganizationDetails = async (organizationId) => {
     const query = `
-        SELECT category_id, name
-        FROM category
-        WHERE category_id = $1;
+        SELECT organization_id, name, description, contact_email, logo_filename
+        FROM organization
+        WHERE organization_id = $1;
     `;
 
-    const queryParams = [categoryId];
+    const queryParams = [organizationId];
     const result = await db.query(query, queryParams);
 
-    // Return the first row, or null if no category was found
+    // Return the first row, or null if no organization was found
     return result.rows.length > 0 ? result.rows[0] : null;
 };
 
-const getCategoriesByProjectId = async (projectId) => {
-    const query = `
-        SELECT c.category_id, c.name
-        FROM category c
-        JOIN project_category pc ON c.category_id = pc.category_id
-        WHERE pc.project_id = $1
-        ORDER BY c.name;
-    `;
-
-    const queryParams = [projectId];
-    const result = await db.query(query, queryParams);
-
-    return result.rows;
-};
-
-// Export the model functions
-export { getAllCategories, getCategoryDetails, getCategoriesByProjectId };
+export { getAllOrganizations, getOrganizationDetails };

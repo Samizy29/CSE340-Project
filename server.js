@@ -1,61 +1,36 @@
 import express from 'express';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import { getAllOrganizations } from './src/models/organizations.js';
-import { getAllProjects } from './src/models/projects.js';
-import { getAllCategories } from './src/models/categories.js';
 
-// Define the application environment
-const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
+import { showHomePage } from './controllers/index.js';
+import { showOrganizationsPage, showOrganizationDetailsPage } from './controllers/organizations.js';
+import { showProjectsPage, showProjectDetailsPage } from './controllers/projects.js';
+import {
+    categoryValidation,
+    showCategoriesPage,
+    showCategoryDetailsPage,
+    showNewCategoryForm,
+    processNewCategoryForm,
+    showEditCategoryForm,
+    processEditCategoryForm
+} from './controllers/categories.js';
+import { testErrorPage } from './controllers/errors.js';
 
-// Define the port number the server will listen on
-const PORT = process.env.PORT || 3000;
+const router = express.Router();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+router.get('/', showHomePage);
+router.get('/organizations', showOrganizationsPage);
+router.get('/organization/:id', showOrganizationDetailsPage);
+router.get('/projects', showProjectsPage);
+router.get('/project/:id', showProjectDetailsPage);
+router.get('/categories', showCategoriesPage);
+router.get('/category/:id', showCategoryDetailsPage);
 
-const app = express();
+// category create and edit routes
+router.get('/new-category', showNewCategoryForm);
+router.post('/new-category', categoryValidation, processNewCategoryForm);
+router.get('/edit-category/:id', showEditCategoryForm);
+router.post('/edit-category/:id', categoryValidation, processEditCategoryForm);
 
-/**
- * Configure Express middleware
- */
+// error-handling routes
+router.get('/test-error', testErrorPage);
 
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Set EJS as the templating engine
-app.set('view engine', 'ejs');
-
-// Tell Express where to find your templates
-app.set('views', path.join(__dirname, 'src/views'));
-
-/**
- * Routes
- */
-app.get('/', async (req, res) => {
-    const title = 'Home';
-    res.render('home', { title });
-});
-
-app.get('/organizations', async (req, res) => {
-    const organizations = await getAllOrganizations();
-    const title = 'Our Partner Organizations';
-    res.render('organizations', { title, organizations });
-});
-
-app.get('/projects', async (req, res) => {
-    const projects = await getAllProjects();
-    const title = 'Service Projects';
-    res.render('projects', { title, projects });
-});
-
-app.get('/categories', async (req, res) => {
-    const categories = await getAllCategories();
-    const title = 'Service Project Categories';
-    res.render('categories', { title, categories });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server is running at http://127.0.0.1:${PORT}`);
-    console.log(`Environment: ${NODE_ENV}`);
-});
+export default router;
