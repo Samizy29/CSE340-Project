@@ -1,36 +1,85 @@
 import express from 'express';
+import session from 'express-session';
+import flash from 'connect-flash';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import router from './src/routes.js';
 
-import { showHomePage } from './controllers/index.js';
-import { showOrganizationsPage, showOrganizationDetailsPage } from './controllers/organizations.js';
-import { showProjectsPage, showProjectDetailsPage } from './controllers/projects.js';
-import {
-    categoryValidation,
-    showCategoriesPage,
-    showCategoryDetailsPage,
-    showNewCategoryForm,
-    processNewCategoryForm,
-    showEditCategoryForm,
-    processEditCategoryForm
-} from './controllers/categories.js';
-import { testErrorPage } from './controllers/errors.js';
+// Define the application environment
+const NODE_ENV = process.env.NODE_ENV?.toLowerCase() || 'production';
 
-const router = express.Router();
+// Define the port number the server will listen on
+const PORT = process.env.PORT || 3000;
 
-router.get('/', showHomePage);
-router.get('/organizations', showOrganizationsPage);
-router.get('/organization/:id', showOrganizationDetailsPage);
-router.get('/projects', showProjectsPage);
-router.get('/project/:id', showProjectDetailsPage);
-router.get('/categories', showCategoriesPage);
-router.get('/category/:id', showCategoryDetailsPage);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// category create and edit routes
-router.get('/new-category', showNewCategoryForm);
-router.post('/new-category', categoryValidation, processNewCategoryForm);
-router.get('/edit-category/:id', showEditCategoryForm);
-router.post('/edit-category/:id', categoryValidation, processEditCategoryForm);
+const app = express();
 
-// error-handling routes
-router.get('/test-error', testErrorPage);
+/**
+ * Configure Express middleware
+ */
 
-export default router;
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Set EJS as the templating engine
+app.set('view engine', 'ejs');
+
+// Tell Express where to find your templates
+app.set('views', path.join(__dirname, 'src/views'));
+
+// Parse form data submitted with POST requests
+app.use(express.urlencoded({ extended: true }));
+
+// Sessions and flash messages
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev-secret',
+    resave: false,
+    saveUninitialized: false
+}));
+app.use(flash());
+
+// Make flash messages available to every view
+app.use((req, res, next) => {
+    res.locals.flash = req.flash();
+    next();
+});
+
+/**
+ * Routes
+ */
+app.use(router);
+
+// Catch requests that matched no route and forward them as a 404
+app.use((req, res, next) => {
+    const err = new Error('Page Not Found');
+    err.status = 404;
+    next(err);
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    const status = err.status || 500;
+    const template = status === 404 ? 'errors/404' : 'errors/500';
+    const title = status === 404 ? 'Page Not Found' : 'Server Error';
+
+    if (status !== 404) {
+        console.error(err);
+    }
+
+    res.status(status).render(template, {
+        title,
+        // Only show technical details while developing
+        error: NODE_ENV === 'development' ? err.stack : null
+    });
+});
+
+app.listen(PORT, () => {
+    console.log(`Server is running at http://127.0.0.1:${PORT}`);
+    console.log(`Environment: ${NODE_ENV}`);
+});
